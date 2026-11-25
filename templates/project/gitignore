@@ -1,0 +1,12 @@
+# Project notes for Claude (local only)
+/CLAUDE.md
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Env
+.env
+.env.*
+!.env.example
