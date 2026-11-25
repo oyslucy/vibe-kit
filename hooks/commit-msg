@@ -1,0 +1,49 @@
+#!/bin/sh
+# vibe-kit commit-msg hook
+# - Strips "Co-Authored-By:" trailers (case-insensitive).
+# - Requires exactly one non-comment, non-blank line.
+# - Accepts "type: description" or a short English sentence starting with a capital.
+# - Lets git-generated messages (merge, revert, fixup!/squash!/amend!) through.
+
+LC_ALL=C
+export LC_ALL
+
+msg_file=$1
+[ -n "$msg_file" ] && [ -f "$msg_file" ] || exit 0
+
+# 1. Strip co-author trailers.
+tmp="$msg_file.vibe.$$"
+grep -iv '^[[:space:]]*co-authored-by:' "$msg_file" > "$tmp"
+mv "$tmp" "$msg_file"
+
+# Content = lines before a scissors line, excluding comments and blank lines.
+content() {
+    awk '/^# -+ >8 -+$/ { exit } /^#/ { next } /^[[:space:]]*$/ { next } { print }' "$msg_file"
+}
+
+first=$(content | head -n 1)
+
+# 2. Git-generated messages pass as-is.
+case $first in
+    "Merge "* | "Revert \""* | "fixup! "* | "squash! "* | "amend! "*) exit 0 ;;
+esac
+
+fail() {
+    echo "commit-msg: $1" >&2
+    echo "  e.g. \"feat: add login page\" or \"Add login page\"" >&2
+    exit 1
+}
+
+# 3. Exactly one line.
+count=$(content | awk 'END { print NR }')
+[ "$count" -eq 1 ] || fail "message must be exactly one line (found $count)."
+
+# 4. Format.
+types='feat|fix|chore|docs|refactor|test|style|perf'
+if printf '%s\n' "$first" | grep -Eq "^($types)(\([a-z0-9._/-]+\))?!?: [ -~]+$"; then
+    exit 0
+fi
+if printf '%s\n' "$first" | grep -Eq '^[A-Z][ -~]*$'; then
+    exit 0
+fi
+fail "use \"type: description\" ($types) or an English sentence starting with a capital letter."
