@@ -1,0 +1,11 @@
+# Root-only: global/CLAUDE.md and templates/**/CLAUDE.md must stay tracked
+/CLAUDE.md
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+.pytest_cache/
+.DS_Store
